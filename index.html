@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Безвестный полк — карта пропавших без вести</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+  :root {
+    --bg: #14161a;
+    --panel: #1b1e24;
+    --line: #2b2f37;
+    --text: #e7e5e0;
+    --text-dim: #8b8f98;
+    --accent-low: #3a2f2c;
+    --accent-high: #b3543f;
+    --accent-mid: #7a4438;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Georgia', 'PT Serif', serif;
+  }
+
+  /* Map fills the entire viewport */
+  .map-panel {
+    position: fixed;
+    inset: 0;
+    background: var(--panel);
+  }
+
+  #map {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .region {
+    stroke: var(--bg);
+    stroke-width: 0.6;
+    transition: opacity 0.15s ease;
+    cursor: pointer;
+  }
+
+  .region:hover {
+    opacity: 0.82;
+    stroke: var(--text);
+    stroke-width: 1.1;
+  }
+
+  .region.no-data {
+    fill: #23262c;
+  }
+
+  /* Info overlay — plain text over the map, top-right, no card chrome */
+  .info-panel {
+    position: fixed;
+    top: 28px;
+    right: 28px;
+    width: min(420px, calc(100vw - 56px));
+    z-index: 20;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7), 0 0 20px rgba(0,0,0,0.4);
+  }
+
+  h1 {
+    font-size: clamp(22px, 2.6vw, 28px);
+    font-weight: 400;
+    line-height: 1.15;
+    margin: 0 0 10px;
+    color: var(--text);
+    letter-spacing: 0.01em;
+  }
+
+  .lede {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text-dim);
+    margin: 0;
+  }
+
+  .stat-row {
+    display: flex;
+    gap: 26px;
+    margin-top: 16px;
+  }
+
+  .stat {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    text-align: center;
+  }
+
+  .stat .num {
+    font-family: 'Georgia', serif;
+    font-size: 26px;
+    color: var(--accent-high);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .stat .label {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    letter-spacing: 0.02em;
+  }
+
+  .tg-link {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 7px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12.5px;
+    color: var(--accent-high);
+    text-decoration: none;
+    letter-spacing: 0.02em;
+  }
+
+  .tg-icon {
+    flex-shrink: 0;
+    color: var(--accent-high);
+  }
+
+  .tg-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Legend — floats bottom-center over the map */
+  .legend {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(27, 30, 36, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 10px 18px;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 11px;
+    color: var(--text-dim);
+    z-index: 20;
+  }
+
+  .legend-scale {
+    width: 140px;
+    height: 8px;
+    border-radius: 1px;
+    background: linear-gradient(90deg, var(--accent-low), var(--accent-mid), var(--accent-high));
+  }
+
+  .tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: #0d0e11;
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 2px;
+    opacity: 0;
+    transition: opacity 0.1s ease;
+    max-width: 240px;
+    z-index: 30;
+  }
+
+  .tooltip .t-name {
+    font-family: 'Georgia', serif;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+
+  .tooltip .t-count {
+    color: var(--accent-high);
+  }
+
+  .t-hint {
+    color: var(--text-dim);
+    font-size: 11px;
+    margin-top: 4px;
+  }
+
+  /* Popup with names for a clicked region — floats like a window,
+     not docked to the screen edge. Left side stays free for future poster cards. */
+  .popup-overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  .popup-overlay.open { display: block; }
+  .popup-overlay.open .popup-panel {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .popup-panel {
+    position: absolute;
+    top: 90px;
+    right: 40px;
+    width: min(560px, calc(100vw - 48px));
+    height: calc(100vh - 130px);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    pointer-events: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .popup-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .popup-header h2 {
+    font-family: 'Georgia', serif;
+    font-weight: 400;
+    font-size: 20px;
+    margin: 0;
+    color: var(--text);
+  }
+
+  .popup-close {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0 0 16px;
+  }
+
+  .popup-close:hover { color: var(--text); }
+
+  .popup-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 24px 20px;
+  }
+
+  .popup-item {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .popup-item:last-child { border-bottom: none; }
+
+  .p-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .p-thumb {
+    flex-shrink: 0;
+    width: 56px;
+    height: 74px;
+    border-radius: 4px;
+    background-color: var(--line);
+    border: 1px solid var(--line);
+    background-repeat: no-repeat;
+    /* вырезаем именно область портрета из полного плаката, без отдельного файла-превью */
+    background-size: 170.06% 180.48%;
+    background-position: 79.39% 43.26%;
+  }
+
+  .popup-item .p-name {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
+    margin-bottom: 6px;
+    overflow-wrap: break-word;
+  }
+
+  .popup-item .p-line {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.65;
+    overflow-wrap: break-word;
+  }
+
+  .popup-item .p-line::before {
+    content: "· ";
+    color: var(--text-dim);
+  }
+
+  .popup-item .p-line.p-missing {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .popup-empty {
+    padding: 40px 24px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  .popup-item { cursor: pointer; }
+  .popup-item:hover .p-name { color: var(--accent-high); }
+
+  /* Full poster viewer — floats on the LEFT, mirrors the popup on the right */
+  .poster-overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  .poster-overlay.open { display: block; }
+  .poster-overlay.open .poster-panel {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .poster-panel {
+    position: absolute;
+    top: 90px;
+    left: 40px;
+    width: min(360px, calc(100vw - 48px));
+    max-height: calc(100vh - 130px);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    pointer-events: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+
+  .poster-panel .popup-header {
+    flex-shrink: 0;
+    align-items: flex-start;
+  }
+
+  .poster-name {
+    font-family: 'Georgia', serif;
+    font-weight: 400;
+    font-size: 20px;
+    margin-top: 0;
+    margin-bottom: 6px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+    color: var(--text);
+  }
+
+  .poster-panel .p-line {
+    font-size: 11px;
+  }
+
+  .poster-image-wrap {
+    flex: 1;
+    overflow-y: auto;
+    background: #000;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .poster-image-wrap img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  @media (max-width: 900px) {
+    .poster-panel { display: none; } /* на узких экранах два окна рядом не влезут — оставляем только попап с именами */
+  }
+
+  @media (max-width: 640px) {
+    .info-panel { width: calc(100vw - 56px); }
+    .popup-panel { top: 20px; right: 20px; left: 20px; width: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="map-panel">
+  <svg id="map" viewBox="0 0 1600 750" preserveAspectRatio="xMidYMid slice"></svg>
+</div>
+
+<div class="info-panel">
+  <h1>БЕЗВЕСТНЫЙ ПОЛК</h1>
+  <p class="lede">Гражданская инициатива семей БП на СВО, созданная в 2026 году. Объединяем истории пропавших без вести, публикуем опыт их семей, участвуем в памятных акциях.</p>
+  <div class="stat-row">
+    <div class="stat">
+      <div class="num" id="stat-total">—</div>
+      <div class="label">историй собрано</div>
+    </div>
+    <div class="stat">
+      <div class="num" id="stat-updated">—</div>
+      <div class="label">данные обновлены</div>
+    </div>
+  </div>
+  <a class="tg-link" href="https://t.me/bezvestny_polk" target="_blank" rel="noopener">
+    <svg class="tg-icon" viewBox="0 0 240 240" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="120" cy="120" r="120" fill="currentColor"/>
+      <path d="M181.6 73.6c1.7-6.3-4.4-11.6-10.6-9.2L52.4 108.9c-6.7 2.5-6.5 12 .3 14.2l28.7 9.3 11.1 35.7c1.4 4.5 7 6.1 10.6 3l17.3-15.6 29 21.4c5 3.7 12.2 1.1 13.7-5l24.5-98.3z" fill="var(--panel)"/>
+    </svg>
+    @bezvestny_polk
+  </a>
+</div>
+
+<div class="legend">
+  <span>меньше</span>
+  <div class="legend-scale"></div>
+  <span>больше</span>
+</div>
+
+<div class="tooltip" id="tooltip">
+  <div class="t-name" id="t-name"></div>
+  <div class="t-count" id="t-count"></div>
+  <div class="t-hint">Нажмите, чтобы увидеть имена</div>
+</div>
+
+<div class="popup-overlay" id="popup-overlay">
+  <div class="popup-panel">
+    <div class="popup-header">
+      <h2 id="popup-title"></h2>
+      <button class="popup-close" id="popup-close" aria-label="Закрыть">&times;</button>
+    </div>
+    <div class="popup-list" id="popup-list"></div>
+  </div>
+</div>
+
+<div class="poster-overlay" id="poster-overlay">
+  <div class="poster-panel">
+    <div class="popup-header">
+      <div class="p-info" id="poster-info"></div>
+      <button class="popup-close" id="poster-close" aria-label="Закрыть">&times;</button>
+    </div>
+    <div class="poster-image-wrap" id="poster-image-wrap"></div>
+  </div>
+</div>
+
+<script>
+const svg = d3.select('#map');
+const width = 1600, height = 750;
+const tooltip = d3.select('#tooltip');
+
+Promise.all([
+  d3.json('data/russia.geojson'),
+  d3.json('data/stats.json'),
+  d3.json('data/records.json').catch(() => ({}))  // records.json optional — map still works without it
+]).then(([geo, stats, records]) => {
+
+  const regionCounts = stats.regions;
+  const maxCount = d3.max(Object.values(regionCounts));
+
+  const color = d3.scaleLinear()
+    .domain([0, maxCount])
+    .range(['#3a2f2c', '#b3543f']);
+
+  const projection = d3.geoMercator()
+    .rotate([-100, 0])
+    .fitSize([width, height], geo);
+  const path = d3.geoPath().projection(projection);
+
+  svg.attr('viewBox', `0 0 ${width} ${height}`);
+
+  svg.selectAll('path')
+    .data(geo.features)
+    .join('path')
+    .attr('d', path)
+    .attr('class', d => {
+      const name = d.properties.name;
+      return 'region' + (regionCounts[name] ? '' : ' no-data');
+    })
+    .attr('fill', d => {
+      const name = d.properties.name;
+      const c = regionCounts[name];
+      return c ? color(c) : '#23262c';
+    })
+    .on('mousemove', (event, d) => {
+      const name = d.properties.name;
+      const c = regionCounts[name] || 0;
+      d3.select('#t-name').text(name);
+      d3.select('#t-count').text(c ? `${c} ${pluralize(c)}` : 'нет данных');
+      tooltip
+        .style('left', (event.clientX + 16) + 'px')
+        .style('top', (event.clientY + 12) + 'px')
+        .style('opacity', 1);
+    })
+    .on('mouseleave', () => tooltip.style('opacity', 0))
+    .on('click', (event, d) => openPopup(d.properties.name, records[d.properties.name] || []));
+
+  // stats
+  document.getElementById('stat-total').textContent = stats.total ?? Object.values(regionCounts).reduce((a,b)=>a+b,0);
+  document.getElementById('stat-updated').textContent = formatDate(stats.updated_at);
+
+}).catch(err => {
+  console.error(err);
+  document.querySelector('.map-panel').innerHTML =
+    '<p style="font-family:Helvetica,Arial,sans-serif;color:#8b8f98;padding:20px;max-width:480px;">' +
+    'Не удалось загрузить данные карты. Если вы открыли файл напрямую (file://), ' +
+    'запустите локальный сервер — см. README.md.</p>';
+});
+
+function pluralize(n) {
+  const mod10 = n % 10, mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'история';
+  if ([2,3,4].includes(mod10) && ![12,13,14].includes(mod100)) return 'истории';
+  return 'историй';
+}
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  const [y,m,d] = iso.split('-');
+  return `${d}.${m}.${y}`;
+}
+
+// --- Popup with names for a clicked region ---
+const overlay = document.getElementById('popup-overlay');
+const popupTitle = document.getElementById('popup-title');
+const popupList = document.getElementById('popup-list');
+
+function openPopup(regionName, items) {
+  popupTitle.textContent = regionName;
+  popupList.innerHTML = '';
+
+  if (!items.length) {
+    popupList.innerHTML = '<div class="popup-empty">Нет карточек с известным ФИО для этого региона.</div>';
+  } else {
+    for (const item of items) {
+      const div = document.createElement('div');
+      div.className = 'popup-item';
+      div.addEventListener('click', () => openPoster(item));
+
+      const info = document.createElement('div');
+      info.className = 'p-info';
+      buildInfoBlock(item, info);
+      div.appendChild(info);
+
+      if (item.photo) {
+        const thumb = document.createElement('div');
+        thumb.className = 'p-thumb';
+        thumb.style.backgroundImage = `url('${item.photo}')`;
+        thumb.setAttribute('role', 'img');
+        thumb.setAttribute('aria-label', item.fio || '');
+        div.appendChild(thumb);
+      }
+
+      popupList.appendChild(div);
+    }
+  }
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePopup() {
+  overlay.classList.remove('open');
+  document.body.style.overflow = 'hidden'; // page itself never scrolls — map is full-screen
+}
+
+document.getElementById('popup-close').addEventListener('click', closePopup);
+document.addEventListener('click', (e) => {
+  if (!overlay.classList.contains('open')) return;
+  const panel = document.querySelector('.popup-panel');
+  if (panel.contains(e.target) || e.target.closest('.region')) return; // clicking a region opens a new popup, handled separately
+  closePopup();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePopup(); });
+
+// --- Full poster viewer (opens on the left when a card is clicked) ---
+const posterOverlay = document.getElementById('poster-overlay');
+const posterInfo = document.getElementById('poster-info');
+const posterImageWrap = document.getElementById('poster-image-wrap');
+
+function buildInfoBlock(item, container) {
+  container.innerHTML = '';
+
+  const name = document.createElement('div');
+  name.className = 'p-name';
+  name.textContent = item.fio || 'Имя не указано';
+  container.appendChild(name);
+
+  if (item.rank) {
+    const l = document.createElement('div');
+    l.className = 'p-line';
+    l.textContent = item.rank;
+    container.appendChild(l);
+  }
+  if (item.unit) {
+    const l = document.createElement('div');
+    l.className = 'p-line';
+    l.textContent = item.unit;
+    container.appendChild(l);
+  }
+  if (item.missing_date) {
+    const l = document.createElement('div');
+    l.className = 'p-line p-missing';
+    l.textContent = 'пропал: ' + item.missing_date;
+    container.appendChild(l);
+  }
+}
+
+function openPoster(item) {
+  if (!item.photo) return; // нет плаката для этого человека — клик ничего не делает
+
+  posterInfo.innerHTML = '';
+  const name = document.createElement('h2');
+  name.className = 'poster-name';
+  name.textContent = item.fio || 'Имя не указано';
+  posterInfo.appendChild(name);
+
+  if (item.rank) {
+    const l = document.createElement('div');
+    l.className = 'p-line';
+    l.textContent = item.rank;
+    posterInfo.appendChild(l);
+  }
+  if (item.unit) {
+    const l = document.createElement('div');
+    l.className = 'p-line';
+    l.textContent = item.unit;
+    posterInfo.appendChild(l);
+  }
+  if (item.missing_date) {
+    const l = document.createElement('div');
+    l.className = 'p-line p-missing';
+    l.textContent = 'пропал: ' + item.missing_date;
+    posterInfo.appendChild(l);
+  }
+
+  posterImageWrap.innerHTML = '';
+  const img = document.createElement('img');
+  img.src = item.photo;
+  img.alt = item.fio || '';
+  posterImageWrap.appendChild(img);
+  posterOverlay.classList.add('open');
+}
+
+function closePoster() {
+  posterOverlay.classList.remove('open');
+}
+
+document.getElementById('poster-close').addEventListener('click', closePoster);
+document.addEventListener('click', (e) => {
+  if (!posterOverlay.classList.contains('open')) return;
+  const panel = document.querySelector('.poster-panel');
+  if (panel.contains(e.target) || e.target.closest('.popup-item')) return; // клик по другой карточке откроет свой плакат
+  closePoster();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePoster(); });
+</script>
+
+</body>
+</html>
