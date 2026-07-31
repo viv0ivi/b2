@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Безвестный полк — карта пропавших без вести</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="lib/d3.min.js"></script>
 <style>
   :root {
     --bg: #14161a;
@@ -409,6 +409,94 @@
     .info-panel { width: calc(100vw - 56px); }
     .popup-panel { top: 20px; right: 20px; left: 20px; width: auto; }
   }
+
+  /* Vertical zoom slider */
+  .zoom-control {
+    position: fixed;
+    bottom: 90px;
+    right: 24px;
+    z-index: 20;
+    background: rgba(27, 30, 36, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .zoom-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    flex-shrink: 0;
+  }
+
+  .zoom-btn:hover { border-color: var(--accent-high); color: var(--accent-high); }
+
+  .zoom-slider-wrap {
+    width: 26px;
+    height: 120px;
+    position: relative;
+  }
+
+  .zoom-slider-wrap input[type="range"] {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120px;
+    height: 20px;
+    margin: 0;
+    transform: translate(-50%, -50%) rotate(-90deg);
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .zoom-slider-wrap input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    background: var(--line);
+    border-radius: 2px;
+  }
+
+  .zoom-slider-wrap input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent-high);
+    margin-top: -6px;
+    cursor: pointer;
+  }
+
+  .zoom-slider-wrap input[type="range"]::-moz-range-track {
+    height: 4px;
+    background: var(--line);
+    border-radius: 2px;
+  }
+
+  .zoom-slider-wrap input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border: none;
+    border-radius: 50%;
+    background: var(--accent-high);
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -443,6 +531,14 @@
   <span>меньше</span>
   <div class="legend-scale"></div>
   <span>больше</span>
+</div>
+
+<div class="zoom-control">
+  <button class="zoom-btn" id="zoom-in" aria-label="Приблизить">+</button>
+  <div class="zoom-slider-wrap">
+    <input type="range" id="zoom-slider" min="1" max="10" step="0.1" value="1">
+  </div>
+  <button class="zoom-btn" id="zoom-out" aria-label="Отдалить">&minus;</button>
 </div>
 
 <div class="tooltip" id="tooltip">
@@ -534,10 +630,15 @@ Promise.all([
     return kCover / kMeet; // масштаб внутри системы координат зума, где 1 = вся карта целиком видна (letterbox)
   }
 
+  const zoomSlider = document.getElementById('zoom-slider');
+
   const zoom = d3.zoom()
     .scaleExtent([1, 10])
     .translateExtent([[0, 0], [width, height]])
-    .on('zoom', (event) => zoomLayer.attr('transform', event.transform));
+    .on('zoom', (event) => {
+      zoomLayer.attr('transform', event.transform);
+      zoomSlider.value = event.transform.k;
+    });
 
   svg.call(zoom);
   svg.on('dblclick.zoom', null); // не даём случайному двойному тапу неожиданно зумить
@@ -556,6 +657,17 @@ Promise.all([
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(applyCoverFit, 200);
+  });
+
+  // --- Zoom slider + кнопки ---
+  zoomSlider.addEventListener('input', () => {
+    svg.call(zoom.scaleTo, +zoomSlider.value);
+  });
+  document.getElementById('zoom-in').addEventListener('click', () => {
+    svg.transition().duration(200).call(zoom.scaleBy, 1.4);
+  });
+  document.getElementById('zoom-out').addEventListener('click', () => {
+    svg.transition().duration(200).call(zoom.scaleBy, 1 / 1.4);
   });
 
   // stats
