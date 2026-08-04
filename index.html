@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Безвестный полк — карта пропавших без вести</title>
 <script src="lib/d3.min.js"></script>
-<script data-goatcounter="https://bezvestny.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
+<script data-goatcounter="https://bezvestny.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 <style>
   :root {
     --bg: #14161a;
@@ -138,6 +137,74 @@
 
   .tg-link:hover {
     text-decoration: underline;
+  }
+
+  /* Search box */
+  .search-box {
+    position: relative;
+    margin-top: 16px;
+  }
+
+  .search-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(13, 14, 17, 0.6);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+  }
+
+  .search-input::placeholder { color: var(--text-dim); }
+  .search-input:focus { border-color: var(--accent-high); }
+
+  .search-results {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    max-height: 320px;
+    overflow-y: auto;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    display: none;
+    z-index: 25;
+  }
+
+  .search-results.open { display: block; }
+
+  .search-result-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--line);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item:hover { background: rgba(179, 84, 63, 0.12); }
+
+  .search-result-item .sr-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .search-result-item .sr-region {
+    font-size: 11.5px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .search-empty {
+    padding: 14px 12px;
+    font-size: 13px;
+    color: var(--text-dim);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
   }
 
   /* Legend — floats bottom-center over the map */
@@ -520,6 +587,10 @@
       <div class="label">данные обновлены</div>
     </div>
   </div>
+  <div class="search-box">
+    <input type="text" class="search-input" id="search-input" placeholder="Поиск по имени..." autocomplete="off">
+    <div class="search-results" id="search-results"></div>
+  </div>
   <a class="tg-link" href="https://t.me/bezvestny_polk" target="_blank" rel="noopener">
     <svg class="tg-icon" viewBox="0 0 240 240" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="120" cy="120" r="120" fill="currentColor"/>
@@ -676,6 +747,15 @@ Promise.all([
   document.getElementById('stat-total').textContent = stats.total ?? Object.values(regionCounts).reduce((a,b)=>a+b,0);
   document.getElementById('stat-updated').textContent = formatDate(stats.updated_at);
 
+  // --- Поиск по ФИО ---
+  const searchIndex = [];
+  for (const [region, items] of Object.entries(records)) {
+    for (const item of items) {
+      searchIndex.push({ ...item, region, _norm: normFio(item.fio) });
+    }
+  }
+  setupSearch(searchIndex);
+
 }).catch(err => {
   console.error(err);
   document.querySelector('.map-panel').innerHTML =
@@ -683,6 +763,69 @@ Promise.all([
     'Не удалось загрузить данные карты. Если вы открыли файл напрямую (file://), ' +
     'запустите локальный сервер — см. README.md.</p>';
 });
+
+function normFio(s) {
+  if (!s) return '';
+  return s.toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
+}
+
+function setupSearch(searchIndex) {
+  const input = document.getElementById('search-input');
+  const results = document.getElementById('search-results');
+
+  function render(matches, query) {
+    results.innerHTML = '';
+    if (!query) {
+      results.classList.remove('open');
+      return;
+    }
+    if (!matches.length) {
+      const div = document.createElement('div');
+      div.className = 'search-empty';
+      div.textContent = 'Ничего не найдено';
+      results.appendChild(div);
+      results.classList.add('open');
+      return;
+    }
+    for (const item of matches) {
+      const div = document.createElement('div');
+      div.className = 'search-result-item';
+      const name = document.createElement('div');
+      name.className = 'sr-name';
+      name.textContent = item.fio || 'Имя не указано';
+      const region = document.createElement('div');
+      region.className = 'sr-region';
+      region.textContent = item.region;
+      div.appendChild(name);
+      div.appendChild(region);
+      div.addEventListener('click', () => {
+        results.classList.remove('open');
+        input.value = item.fio || '';
+        openPopup('Результат поиска', [item]);
+      });
+      results.appendChild(div);
+    }
+    results.classList.add('open');
+  }
+
+  input.addEventListener('input', () => {
+    const raw = input.value.trim();
+    if (!raw) { render([], ''); return; }
+    const q = normFio(raw);
+    const matches = searchIndex.filter(it => it._norm.includes(q)).slice(0, 8);
+    render(matches, raw);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!results.classList.contains('open')) return;
+    if (e.target === input || results.contains(e.target)) return;
+    results.classList.remove('open');
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { results.classList.remove('open'); input.blur(); }
+  });
+}
 
 function pluralize(n) {
   const mod10 = n % 10, mod100 = n % 100;
@@ -744,7 +887,7 @@ document.getElementById('popup-close').addEventListener('click', closePopup);
 document.addEventListener('click', (e) => {
   if (!overlay.classList.contains('open')) return;
   const panel = document.querySelector('.popup-panel');
-  if (panel.contains(e.target) || e.target.closest('.region')) return; // clicking a region opens a new popup, handled separately
+  if (panel.contains(e.target) || e.target.closest('.region') || e.target.closest('.search-result-item')) return; // clicking a region or a search result opens a new popup, handled separately
   closePopup();
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePopup(); });
