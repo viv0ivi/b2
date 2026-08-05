@@ -7,6 +7,21 @@
 <script src="lib/d3.min.js"></script>
 <script data-goatcounter="https://bezvestny.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 <style>
+  @font-face {
+    font-family: 'TG Adventor';
+    src: url('fonts/texgyreadventor-regular-webfont.woff') format('woff');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'TG Adventor';
+    src: url('fonts/texgyreadventor-bold-webfont.woff') format('woff');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+
   :root {
     --bg: #14161a;
     --panel: #1b1e24;
@@ -27,7 +42,7 @@
     overflow: hidden;
     background: var(--bg);
     color: var(--text);
-    font-family: 'Georgia', 'PT Serif', serif;
+    font-family: 'TG Adventor', Georgia, serif;
   }
 
   /* Map fills the entire viewport */
@@ -73,8 +88,9 @@
   }
 
   h1 {
+    font-family: 'TG Adventor', Georgia, serif;
+    font-weight: 700;
     font-size: clamp(22px, 2.6vw, 28px);
-    font-weight: 400;
     line-height: 1.15;
     margin: 0 0 10px;
     color: var(--text);
@@ -82,7 +98,7 @@
   }
 
   .lede {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'TG Adventor', Arial, sans-serif;
     font-size: 13px;
     line-height: 1.55;
     color: var(--text-dim);
@@ -96,12 +112,12 @@
   }
 
   .stat {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'TG Adventor', Arial, sans-serif;
     text-align: center;
   }
 
   .stat .num {
-    font-family: 'Georgia', serif;
+    font-family: 'TG Adventor', Georgia, serif;
     font-size: 26px;
     color: var(--accent-high);
     line-height: 1;
@@ -123,7 +139,7 @@
     margin-top: 18px;
     padding-top: 14px;
     border-top: 1px solid var(--line);
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'TG Adventor', Arial, sans-serif;
     font-size: 12.5px;
     color: var(--accent-high);
     text-decoration: none;
@@ -152,7 +168,7 @@
     border: 1px solid var(--line);
     border-radius: 6px;
     padding: 9px 12px;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'TG Adventor', Arial, sans-serif;
     font-size: 13px;
     color: var(--text);
     outline: none;
@@ -182,7 +198,7 @@
     padding: 10px 12px;
     cursor: pointer;
     border-bottom: 1px solid var(--line);
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'TG Adventor', Arial, sans-serif;
   }
 
   .search-result-item:last-child { border-bottom: none; }
@@ -204,7 +220,7 @@
     padding: 14px 12px;
     font-size: 13px;
     color: var(--text-dim);
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'TG Adventor', Arial, sans-serif;
   }
 
   /* Legend — floats bottom-center over the map */
@@ -222,7 +238,7 @@
     border: 1px solid var(--line);
     border-radius: 20px;
     padding: 10px 18px;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'TG Adventor', Arial, sans-serif;
     font-size: 11px;
     color: var(--text-dim);
     z-index: 20;
@@ -241,7 +257,7 @@
     background: #0d0e11;
     border: 1px solid var(--line);
     color: var(--text);
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'TG Adventor', Arial, sans-serif;
     font-size: 13px;
     padding: 10px 14px;
     border-radius: 2px;
@@ -252,7 +268,8 @@
   }
 
   .tooltip .t-name {
-    font-family: 'Georgia', serif;
+    font-family: 'TG Adventor', Georgia, serif;
+    font-weight: 700;
     font-size: 15px;
     margin-bottom: 4px;
   }
@@ -294,7 +311,7 @@
     border-radius: 8px;
     display: flex;
     flex-direction: column;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'TG Adventor', Arial, sans-serif;
     opacity: 0;
     transform: translateY(-8px) scale(0.98);
     transition: opacity 0.18s ease, transform 0.18s ease;
@@ -311,8 +328,8 @@
   }
 
   .popup-header h2 {
-    font-family: 'Georgia', serif;
-    font-weight: 400;
+    font-family: 'TG Adventor', Georgia, serif;
+    font-weight: 700;
     font-size: 20px;
     margin: 0;
     color: var(--text);
@@ -365,7 +382,7 @@
   }
 
   .popup-item .p-name {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'TG Adventor', Arial, sans-serif;
     font-weight: 700;
     font-size: 15px;
     color: var(--text);
@@ -426,7 +443,7 @@
     border-radius: 8px;
     display: flex;
     flex-direction: column;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'TG Adventor', Arial, sans-serif;
     opacity: 0;
     transform: translateY(-8px) scale(0.98);
     transition: opacity 0.18s ease, transform 0.18s ease;
@@ -441,8 +458,8 @@
   }
 
   .poster-name {
-    font-family: 'Georgia', serif;
-    font-weight: 400;
+    font-family: 'TG Adventor', Georgia, serif;
+    font-weight: 700;
     font-size: 20px;
     margin-top: 0;
     margin-bottom: 6px;
@@ -510,7 +527,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'TG Adventor', Arial, sans-serif;
     flex-shrink: 0;
   }
 
@@ -759,7 +776,7 @@ Promise.all([
 }).catch(err => {
   console.error(err);
   document.querySelector('.map-panel').innerHTML =
-    '<p style="font-family:Helvetica,Arial,sans-serif;color:#8b8f98;padding:20px;max-width:480px;">' +
+    '<p style="font-family:\'TG Adventor\',Arial,sans-serif;color:#8b8f98;padding:20px;max-width:480px;">' +
     'Не удалось загрузить данные карты. Если вы открыли файл напрямую (file://), ' +
     'запустите локальный сервер — см. README.md.</p>';
 });
