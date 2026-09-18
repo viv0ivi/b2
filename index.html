@@ -251,6 +251,20 @@
     background: linear-gradient(90deg, var(--accent-low), var(--accent-mid), var(--accent-high));
   }
 
+  .legend-sep {
+    width: 1px;
+    height: 14px;
+    background: var(--line);
+    margin: 0 2px;
+  }
+
+  .legend-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+
   .tooltip {
     position: fixed;
     pointer-events: none;
@@ -621,6 +635,9 @@
   <span>меньше</span>
   <div class="legend-scale"></div>
   <span>больше</span>
+  <span class="legend-sep"></span>
+  <span class="legend-swatch" style="background:#4a8fa8"></span>
+  <span>соседние страны</span>
 </div>
 
 <div class="zoom-control">
@@ -669,11 +686,25 @@ Promise.all([
 ]).then(([geo, stats, records]) => {
 
   const regionCounts = stats.regions;
-  const maxCount = d3.max(Object.values(regionCounts));
+
+  // Соседние страны — отдельная категория, красим приглушённым синим,
+  // а не по той же оранжевой шкале, что регионы России (чтобы визуально
+  // сразу было видно "это не регион РФ", а не спутать с низким показателем).
+  const ABROAD_NAMES = new Set(['Казахстан', 'Узбекистан', 'Беларусь', 'Азербайджан', 'Таджикистан', 'Армения']);
+
+  const russianCounts = Object.entries(regionCounts).filter(([name]) => !ABROAD_NAMES.has(name)).map(([, c]) => c);
+  const abroadCounts = Object.entries(regionCounts).filter(([name]) => ABROAD_NAMES.has(name)).map(([, c]) => c);
+
+  const maxCount = d3.max(russianCounts) || 1;
+  const maxAbroad = d3.max(abroadCounts) || 1;
 
   const color = d3.scaleLinear()
     .domain([0, maxCount])
     .range(['#3a2f2c', '#b3543f']);
+
+  const colorAbroad = d3.scaleLinear()
+    .domain([0, maxAbroad])
+    .range(['#1f3a42', '#4a8fa8']);
 
   const projection = d3.geoMercator()
     .rotate([-100, 0])
@@ -695,7 +726,8 @@ Promise.all([
     .attr('fill', d => {
       const name = d.properties.name;
       const c = regionCounts[name];
-      return c ? color(c) : '#23262c';
+      if (!c) return '#23262c';
+      return ABROAD_NAMES.has(name) ? colorAbroad(c) : color(c);
     })
     .on('mousemove', (event, d) => {
       const name = d.properties.name;
