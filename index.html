@@ -77,10 +77,52 @@
     fill: #23262c;
   }
 
+  /* Общий хедер сайта: те же стили в pravo/pravo.css */
+  .site-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 56px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 24px;
+    background: rgba(20, 22, 26, 0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+    font-family: 'TG Adventor', Arial, sans-serif;
+  }
+  .site-header .brand {
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: .06em;
+    color: var(--text);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .site-nav { display: flex; gap: 24px; height: 100%; }
+  .site-nav a {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    font-size: 13.5px;
+    color: var(--text-dim);
+    text-decoration: none;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .site-nav a:hover { color: var(--text); }
+  .site-nav a[aria-current="page"] { color: var(--text); border-bottom-color: var(--accent-high); }
+  .site-header a:focus-visible { outline: 2px solid var(--accent-high); outline-offset: 2px; }
+
   /* Info overlay — plain text over the map, top-right, no card chrome */
   .info-panel {
     position: fixed;
-    top: 28px;
+    top: 76px;
     right: 28px;
     width: min(420px, calc(100vw - 56px));
     z-index: 20;
@@ -130,25 +172,6 @@
     margin-top: 6px;
     letter-spacing: 0.02em;
   }
-
-  /* Ссылка на правовой раздел — спокойная кнопка с рамкой, не спорит с акцентом карты */
-  .pravo-link {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 16px;
-    padding: 9px 12px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: rgba(13, 14, 17, 0.6);
-    font-family: 'TG Adventor', Arial, sans-serif;
-    font-size: 13px;
-    color: var(--text);
-    text-decoration: none;
-    transition: border-color .15s ease;
-  }
-  .pravo-link:hover { border-color: var(--accent-high); }
-  .pravo-link .pravo-arrow { color: var(--accent-high); }
 
   .tg-link {
     display: flex;
@@ -549,8 +572,12 @@
   }
 
   @media (max-width: 640px) {
+    .site-header { padding: 0 16px; gap: 12px; }
+    .site-header .brand { font-size: 12px; }
+    .site-nav { gap: 16px; }
+    .site-nav a { font-size: 12.5px; }
     .info-panel { width: calc(100vw - 56px); }
-    .popup-panel { top: 20px; right: 20px; left: 20px; width: auto; }
+    .popup-panel { top: 72px; right: 20px; left: 20px; width: auto; height: calc(100vh - 92px); }
   }
 
   /* Vertical zoom slider */
@@ -644,6 +671,14 @@
 </head>
 <body>
 
+<header class="site-header">
+  <a class="brand" href="/">БЕЗВЕСТНЫЙ ПОЛК</a>
+  <nav class="site-nav" aria-label="Основное меню">
+    <a href="/" aria-current="page">Главная</a>
+    <a href="/pravo/">Помощь семьям</a>
+  </nav>
+</header>
+
 <div class="map-panel">
   <svg id="map" viewBox="0 0 1600 750"></svg>
 </div>
@@ -665,10 +700,6 @@
     <input type="text" class="search-input" id="search-input" placeholder="Поиск по имени..." autocomplete="off">
     <div class="search-results" id="search-results"></div>
   </div>
-  <a class="pravo-link" href="pravo.html">
-    <span>Правовая помощь семьям</span>
-    <span class="pravo-arrow" aria-hidden="true">→</span>
-  </a>
   <a class="tg-link" href="https://t.me/bezvestny_polk" target="_blank" rel="noopener">
     <svg class="tg-icon" viewBox="0 0 240 240" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="120" cy="120" r="120" fill="currentColor"/>
