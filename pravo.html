@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://gc.zgo.at; img-src 'self' data: https://bezvestny.goatcounter.com; connect-src 'self' https://bezvestny.goatcounter.com; style-src 'self' 'unsafe-inline'; font-src 'self'; base-uri 'self'; form-action 'none'">
+<title>Правовая помощь — Безвестный полк</title>
+<meta name="description" content="Что делать семьям военнослужащих, пропавших без вести: признание погибшим, документы, выплаты.">
+<script data-goatcounter="https://bezvestny.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<style>
+  @font-face {
+    font-family: 'TG Adventor';
+    src: url('fonts/texgyreadventor-regular-webfont.woff') format('woff');
+    font-weight: 400; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'TG Adventor';
+    src: url('fonts/texgyreadventor-bold-webfont.woff') format('woff');
+    font-weight: 700; font-style: normal; font-display: swap;
+  }
+
+  :root {
+    --bg: #14161a;
+    --panel: #1b1e24;
+    --line: #2b2f37;
+    --text: #e7e5e0;
+    --text-dim: #8b8f98;
+    --accent-high: #b3543f;
+    --accent-mid: #7a4438;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'TG Adventor', Georgia, serif;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 24px 20px 64px;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 32px;
+    font-family: 'TG Adventor', Arial, sans-serif;
+  }
+  .topbar a { color: var(--text-dim); text-decoration: none; font-size: 13px; }
+  .topbar a:hover { color: var(--text); text-decoration: underline; }
+  .brand { font-weight: 700; letter-spacing: 0.06em; font-size: 13px; color: var(--text); }
+
+  h1 {
+    font-weight: 700;
+    font-size: clamp(26px, 4vw, 36px);
+    line-height: 1.15;
+    margin: 0 0 12px;
+  }
+  .lede {
+    font-family: 'TG Adventor', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-dim);
+    margin: 0 0 32px;
+    max-width: 620px;
+  }
+
+  /* ---- список статей ---- */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  .card:hover { border-color: var(--accent-high); transform: translateY(-2px); }
+  .card:focus-visible { outline: 2px solid var(--accent-high); outline-offset: 2px; }
+  .card img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+    background: #000;
+  }
+  .card-body { padding: 16px 18px 20px; }
+  .card-title {
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 1.3;
+    margin: 0 0 8px;
+  }
+  .card-summary {
+    font-family: 'TG Adventor', Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text-dim);
+    margin: 0;
+  }
+
+  /* ---- статья ---- */
+  .article { max-width: 680px; }
+  .back {
+    display: inline-block;
+    margin-bottom: 20px;
+    font-family: 'TG Adventor', Arial, sans-serif;
+    font-size: 13px;
+    color: var(--text-dim);
+    text-decoration: none;
+  }
+  .back:hover { color: var(--text); text-decoration: underline; }
+  .article h1 { font-size: clamp(22px, 3.4vw, 30px); }
+  .article .cover {
+    width: 100%;
+    max-height: 420px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    margin: 4px 0 28px;
+    display: block;
+  }
+  .article p, .article li {
+    font-family: 'TG Adventor', Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.75;
+    color: #d3d1cc;
+    overflow-wrap: break-word;
+  }
+  .article p { margin: 0 0 16px; }
+  .article h2 {
+    font-weight: 700;
+    font-size: 18px;
+    margin: 32px 0 12px;
+  }
+  .article ul { margin: 0 0 16px; padding-left: 22px; }
+  .article li { margin-bottom: 8px; }
+  .article li::marker { color: var(--accent-high); }
+
+  .cta {
+    margin-top: 32px;
+    padding: 20px 22px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent-high);
+    border-radius: 6px;
+  }
+  .cta p { margin: 0 0 12px; }
+  .cta a {
+    display: inline-block;
+    font-family: 'TG Adventor', Arial, sans-serif;
+    font-size: 14px;
+    color: var(--accent-high);
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+  }
+  .cta a:hover { color: #c9634c; }
+
+  .disclaimer {
+    margin-top: 56px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    font-family: 'TG Adventor', Arial, sans-serif;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-dim);
+    max-width: 680px;
+  }
+
+  .empty { color: var(--text-dim); font-family: Arial, sans-serif; font-size: 14px; }
+
+  @media (max-width: 520px) {
+    .wrap { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="index.html">← К карте</a>
+    <span class="brand">БЕЗВЕСТНЫЙ ПОЛК</span>
+  </div>
+
+  <main id="view"></main>
+
+  <p class="disclaimer">
+    Материалы носят информационный характер и не заменяют консультацию юриста. Законодательство меняется, поэтому перед подачей документов проверяйте актуальные нормы.
+  </p>
+</div>
+<script src="pravo.js"></script>
+</body>
+</html>
