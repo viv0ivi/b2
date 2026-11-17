@@ -131,6 +131,25 @@
     letter-spacing: 0.02em;
   }
 
+  /* Ссылка на правовой раздел — спокойная кнопка с рамкой, не спорит с акцентом карты */
+  .pravo-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: rgba(13, 14, 17, 0.6);
+    font-family: 'TG Adventor', Arial, sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    text-decoration: none;
+    transition: border-color .15s ease;
+  }
+  .pravo-link:hover { border-color: var(--accent-high); }
+  .pravo-link .pravo-arrow { color: var(--accent-high); }
+
   .tg-link {
     display: flex;
     align-items: center;
@@ -646,6 +665,10 @@
     <input type="text" class="search-input" id="search-input" placeholder="Поиск по имени..." autocomplete="off">
     <div class="search-results" id="search-results"></div>
   </div>
+  <a class="pravo-link" href="pravo.html">
+    <span>Правовая помощь семьям</span>
+    <span class="pravo-arrow" aria-hidden="true">→</span>
+  </a>
   <a class="tg-link" href="https://t.me/bezvestny_polk" target="_blank" rel="noopener">
     <svg class="tg-icon" viewBox="0 0 240 240" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="120" cy="120" r="120" fill="currentColor"/>
